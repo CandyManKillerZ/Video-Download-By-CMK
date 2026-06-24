@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+<title>Video Download by CMK</title>
+<style>
+  :root {
+    --bg: #050805; --panel: rgba(7,20,10,0.82); --panel2: rgba(4,14,7,0.92); --line: #15411f;
+    --txt: #5dff8f; --dim: #34a357; --accent: #39ff14; --accent2: #169a2e;
+    --ok: #39ff14; --warn: #e3d24a; --err: #ff5f5f;
+  }
+  * { box-sizing: border-box; }
+  html { background: #050805; }
+  body {
+    margin: 0; font-family: "Consolas", "Courier New", ui-monospace, monospace;
+    background: var(--bg); color: var(--txt); font-size: 14px;
+    padding: 16px; user-select: none;
+  }
+  /* matrix backdrop sits behind everything; main content lifted above it */
+  #matrix { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .5; }
+  .hdr, .panel, #status, .tabs, details { position: relative; z-index: 1; }
+  h1 { font-size: 17px; margin: 0 0 14px; letter-spacing: 1px; text-transform: uppercase; text-shadow: 0 0 8px rgba(57,255,20,.5); }
+  h1 b { color: var(--accent); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row + .row { margin-top: 10px; }
+  input[type=text] {
+    flex: 1; background: var(--panel2); border: 1px solid var(--line); color: var(--txt);
+    border-radius: 7px; padding: 9px 11px; font-size: 13px; outline: none; min-width: 0;
+  }
+  input[type=text]:focus { border-color: var(--accent); }
+  input[readonly] { color: var(--dim); }
+  button {
+    background: var(--panel2); border: 1px solid var(--line); color: var(--txt);
+    border-radius: 7px; padding: 9px 14px; font-size: 13px; cursor: pointer; transition: .12s; white-space: nowrap;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); box-shadow: 0 0 8px rgba(57,255,20,.25); }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: var(--accent2); border-color: var(--accent); color: #04140a; font-weight: 700; }
+  button.primary:hover:not(:disabled) { background: var(--accent); box-shadow: 0 0 12px rgba(57,255,20,.5); }
+  button.sm { padding: 5px 10px; font-size: 12px; }
+  button.danger:hover:not(:disabled) { border-color: var(--err); color: var(--err); }
+  select {
+    background: var(--panel2); border: 1px solid var(--line); color: var(--txt);
+    border-radius: 7px; padding: 8px 10px; font-size: 13px;
+  }
+  label.lbl { color: var(--dim); font-size: 12.5px; }
+  .toggle { display: flex; align-items: center; gap: 7px; cursor: pointer; color: var(--dim); font-size: 12.5px; }
+  .toggle input { accent-color: var(--accent); width: 15px; height: 15px; }
+
+  #binWarn { display: none; background: #2a211a; border-color: #5a4326; color: var(--warn); font-size: 12.5px; }
+  #binWarn b { color: #ffd27a; }
+
+  /* tabs */
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .tab {
+    padding: 7px 14px; border-radius: 7px 7px 0 0; background: transparent; border: 1px solid transparent;
+    color: var(--dim); cursor: pointer; font-size: 13px;
+  }
+  .tab.active { background: var(--panel); border-color: var(--line); border-bottom-color: var(--panel); color: var(--txt); }
+  .tab .count { color: var(--dim); font-size: 11px; }
+
+  .list { min-height: 80px; }
+  .empty { color: var(--dim); font-size: 12.5px; text-align: center; padding: 26px 0; }
+
+  /* queue / history item */
+  .item { display: flex; gap: 12px; padding: 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel2); margin-bottom: 8px; }
+  .thumb { width: 104px; height: 60px; object-fit: cover; border-radius: 6px; background: #0e1014; border: 1px solid var(--line); flex-shrink: 0; }
+  .body { flex: 1; min-width: 0; }
+  .ititle { font-weight: 600; font-size: 13.5px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .isub { color: var(--dim); font-size: 12px; margin-bottom: 7px; }
+  .isub .st { font-weight: 600; }
+  .st.downloading { color: var(--accent); } .st.paused { color: var(--warn); }
+  .st.done { color: var(--ok); } .st.error { color: var(--err); } .st.stopped { color: var(--dim); }
+  .st.queued, .st.loading { color: var(--dim); }
+  .bar { height: 8px; background: #0e1014; border-radius: 5px; overflow: hidden; border: 1px solid var(--line); }
+  .fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width .2s; }
+  .prog { color: var(--dim); font-size: 11.5px; margin-top: 5px; min-height: 14px; }
+  .ctrls { display: flex; flex-direction: column; gap: 6px; justify-content: center; flex-shrink: 0; }
+
+  #status { font-size: 12.5px; color: var(--dim); margin: 2px 0 10px; min-height: 16px; }
+  #status.ok { color: var(--ok); } #status.err { color: var(--err); } #status.warn { color: var(--warn); }
+
+  details { margin-top: 4px; }
+  summary { cursor: pointer; color: var(--dim); font-size: 12px; }
+  #log {
+    margin-top: 8px; background: #0e1014; border: 1px solid var(--line); border-radius: 7px;
+    height: 110px; overflow: auto; padding: 8px 10px; font-family: Consolas, monospace;
+    font-size: 11px; color: #2f9e58; white-space: pre-wrap; user-select: text;
+  }
+
+  /* header */
+  .hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .hdr h1 { margin: 0; }
+
+  /* overlays / modals */
+  .overlay { position: fixed; inset: 0; background: rgba(8,9,12,.72); display: flex; align-items: center; justify-content: center; z-index: 200; }
+  .modal { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; width: min(540px, 94vw); max-height: 88vh; overflow: auto; }
+  .modal-h { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 15px; }
+  .modal-b { padding: 6px 16px 14px; }
+  .setrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0 6px; }
+  .setrow + .hint { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+  .setrow .toggle { font-size: 13px; color: var(--txt); }
+  .hint { color: var(--dim); font-size: 11.5px; margin: 0 0 4px; }
+  .setrow input[type=text], .setrow input[type=password] {
+    background: var(--panel2); border: 1px solid var(--line); color: var(--txt);
+    border-radius: 6px; padding: 6px 9px; font-size: 12.5px; outline: none;
+  }
+  .setrow input:focus { border-color: var(--accent); }
+
+  .lockbox { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 26px 28px; display: flex; flex-direction: column; gap: 12px; align-items: center; width: min(330px, 90vw); }
+  .lock-title { font-size: 18px; }
+  .lockbox input { width: 100%; text-align: center; background: var(--panel2); border: 1px solid var(--line); color: var(--txt); border-radius: 7px; padding: 9px 11px; outline: none; }
+  .lockbox input:focus { border-color: var(--accent); }
+  .lockerr { color: var(--err); font-size: 12px; min-height: 14px; }
+
+  /* incognito blur (hover to reveal) */
+  body.incognito .thumb { filter: blur(14px); transition: filter .15s; }
+  body.incognito .thumb:hover { filter: none; }
+  body.incognito .ititle { filter: blur(5px); transition: filter .15s; }
+  body.incognito .ititle:hover { filter: none; }
+</style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+  <div class="hdr">
+    <h1>Video Download <b>by CMK</b></h1>
+    <button id="settingsBtn" class="sm">⚙ Settings</button>
+  </div>
+
+  <div class="panel" id="binWarn">
+    ⚠ <b>Missing engine.</b> Put <b>yt-dlp.exe</b> and <b>ffmpeg.exe</b> in the
+    <b>bin\</b> folder, then reopen. <span id="binDetail"></span>
+  </div>
+
+  <!-- Add URL + settings -->
+  <div class="panel">
+    <div class="row">
+      <input id="url" type="text" placeholder="Paste a video URL (Ctrl+V) and press Enter…" autocomplete="off" />
+      <button id="addBtn" class="primary">Add</button>
+    </div>
+    <div class="row">
+      <label class="lbl" for="quality">Quality</label>
+      <select id="quality">
+        <option value="best">Best available</option>
+        <option value="1080">1080p</option>
+        <option value="720">720p</option>
+        <option value="480">480p</option>
+      </select>
+      <label class="toggle" style="margin-left:auto">
+        <input type="checkbox" id="clipwatch" /> Auto-add copied URLs
+      </label>
+    </div>
+    <div class="row">
+      <label class="lbl" for="folder">Save&nbsp;to</label>
+      <input id="folder" type="text" readonly />
+      <button id="browseBtn">Browse…</button>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <!-- Tabs: Queue / History -->
+  <div class="tabs">
+    <div class="tab active" id="tab-queue" data-tab="queue">Queue <span class="count" id="qCount"></span></div>
+    <div class="tab" id="tab-history" data-tab="history">History <span class="count" id="hCount"></span></div>
+    <div style="flex:1"></div>
+    <button id="downloadAllBtn" class="primary sm" disabled>Download</button>
+    <button id="clearHistoryBtn" class="sm danger" style="display:none">Clear history</button>
+  </div>
+
+  <div class="panel">
+    <div class="list" id="queueList"></div>
+    <div class="list" id="historyList" style="display:none"></div>
+  </div>
+
+  <details>
+    <summary>Log</summary>
+    <div id="log"></div>
+  </details>
+
+  <!-- Settings modal -->
+  <div id="settingsModal" class="overlay" style="display:none">
+    <div class="modal">
+      <div class="modal-h"><span>⚙ Settings</span><button id="settingsClose" class="sm">✕</button></div>
+      <div class="modal-b">
+        <div class="setrow">
+          <label class="toggle"><input type="checkbox" id="set-subfolders"> Sort downloads into per-site subfolders</label>
+        </div>
+        <div class="hint">e.g. <b>…\YourFolder\PornHub\video.mp4</b> — keeps each site's videos together.</div>
+
+        <div class="setrow">
+          <label class="toggle"><input type="checkbox" id="set-lock"> Require passcode on launch</label>
+          <button id="set-passcode" class="sm">Set passcode</button>
+        </div>
+        <div class="hint">Casual lock — deters a glance, not someone with disk access.</div>
+
+        <div class="setrow">
+          <label class="toggle"><input type="checkbox" id="set-panic"> Panic-hide hotkey</label>
+          <button id="set-panic-key" class="sm">Hotkey: <b id="panicKeyLabel">Ctrl+Shift+H</b></button>
+        </div>
+        <div class="hint">Press it anywhere to instantly hide/show the window. Downloads keep running while hidden.</div>
+
+        <div class="setrow">
+          <label class="toggle"><input type="checkbox" id="set-incognito"> Incognito — no history, blur titles &amp; thumbnails</label>
+        </div>
+        <div class="hint">Thumbnails &amp; titles unblur on hover. Completed downloads aren't recorded.</div>
+
+        <div class="setrow">
+          <label class="toggle"><input type="checkbox" id="set-discreet"> Discreet taskbar title</label>
+          <input type="text" id="set-discreet-name" placeholder="Media Tool" />
+        </div>
+        <div class="hint">Changes the window/taskbar/alt-tab label to something innocuous.</div>
+
+        <div class="setrow">
+          <span style="font-size:13px">yt-dlp version: <b id="ytdlpVer">…</b></span>
+          <button id="set-update" class="sm primary">Update yt-dlp</button>
+        </div>
+        <div class="hint" id="updateResult">Keep this current — sites change and yt-dlp updates often.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lock screen -->
+  <div id="lockScreen" class="overlay" style="display:none; z-index:1000">
+    <div class="lockbox">
+      <div class="lock-title">🔒 Locked</div>
+      <input type="password" id="lockInput" placeholder="Enter passcode" />
+      <button id="lockUnlock" class="primary" style="width:100%">Unlock</button>
+      <div id="lockErr" class="lockerr"></div>
+    </div>
+  </div>
+
+  <!-- Reusable text prompt (Electron has no window.prompt) -->
+  <div id="promptModal" class="overlay" style="display:none; z-index:1100">
+    <div class="lockbox">
+      <div id="promptTitle" class="lock-title" style="font-size:15px"></div>
+      <input type="password" id="promptInput" />
+      <div class="row" style="gap:8px; width:100%">
+        <button id="promptOk" class="primary" style="flex:1">OK</button>
+        <button id="promptCancel" style="flex:1">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="matrix.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

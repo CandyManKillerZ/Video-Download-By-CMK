@@ -1,0 +1,44 @@
+{
+  "name": "video-download-cmk",
+  "version": "1.0.0",
+  "description": "Video Download by CMK — simple GUI video downloader (yt-dlp + ffmpeg)",
+  "main": "main.js",
+  "author": "CandyManKillerZ (CMK)",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --publish never",
+    "make-icon": "node build/make-icon.js"
+  },
+  "devDependencies": {
+    "electron": "^42.0.0",
+    "electron-builder": "^25.0.0",
+    "jimp": "^0.22.12",
+    "png-to-ico": "^2.1.8"
+  },
+  "build": {
+    "appId": "com.cmk.videodownload",
+    "productName": "Video Download by CMK",
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*"
+    ],
+    "extraResources": [
+      { "from": "bin", "to": "bin", "filter": ["**/*"] }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true
+    }
+  }
+}
