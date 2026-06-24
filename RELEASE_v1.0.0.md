@@ -6,7 +6,7 @@ A fast, no-nonsense **video downloader** with a clean GUI and a Matrix-green hac
 
 ## 📥 Download
 
-**[⬇ Video Download by CMK Setup 1.0.0.exe](#)** — Windows 10/11 (64-bit)
+**⬇ `Video Download by CMK Setup 1.0.0.exe`** — Windows 10/11 (64-bit) — in the **Assets** section below.
 
 Download it, run it, follow the wizard. It installs per-user (no admin needed) and adds a desktop + Start-menu shortcut.
 
