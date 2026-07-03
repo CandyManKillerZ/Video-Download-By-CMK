@@ -19,11 +19,16 @@
 
 ## 📥 Download
 
-Grab the latest installer from the **[Releases page](../../releases)** → `Video Download by CMK Setup x.y.z.exe`.
+Grab your platform's file from the **[Releases page](../../releases)** (under **Assets**):
 
-It installs **per-user (no admin needed)** with a normal wizard, and adds a desktop + Start-menu shortcut.
+| Platform | File |
+|----------|------|
+| 🪟 **Windows** 10/11 (64-bit) | `Video.Download.by.CMK.Setup.x.y.z.exe` — run the wizard (per-user, no admin) |
+| 🐧 **Linux** (x64) | `Video.Download.by.CMK-x.y.z.AppImage` — `chmod +x` it, then run it |
 
-> **Heads-up:** the app isn't code-signed, so on first run Windows SmartScreen shows *"Windows protected your PC"* → click **More info → Run anyway**. If the installer seems to do nothing, right-click it → **Properties** → check **Unblock** → **Apply**, then run again. (Some antivirus tools throw a *false positive* on the bundled `yt-dlp.exe` — common for downloader utilities.)
+> **Windows heads-up:** the app isn't code-signed, so on first run SmartScreen shows *"Windows protected your PC"* → click **More info → Run anyway**. If the installer seems to do nothing, right-click it → **Properties** → check **Unblock** → **Apply**, then run again. (Some antivirus tools throw a *false positive* on the bundled `yt-dlp.exe` — common for downloader utilities.)
+>
+> **Linux heads-up:** make the AppImage executable (`chmod +x …AppImage` or right-click → Properties → allow executing). On Ubuntu 22.04+ you may need `sudo apt install libfuse2`, or run it with `--appimage-extract-and-run`.
 
 ---
 

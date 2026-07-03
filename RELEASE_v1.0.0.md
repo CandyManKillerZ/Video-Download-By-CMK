@@ -6,13 +6,23 @@ A fast, no-nonsense **video downloader** with a clean GUI and a Matrix-green hac
 
 ## 📥 Download
 
-**⬇ `Video Download by CMK Setup 1.0.0.exe`** — Windows 10/11 (64-bit) — in the **Assets** section below.
+Grab your platform's file from the **Assets** section below.
 
-Download it, run it, follow the wizard. It installs per-user (no admin needed) and adds a desktop + Start-menu shortcut.
+### 🪟 Windows 10/11 (64-bit) — `Video.Download.by.CMK.Setup.1.0.0.exe`
+Run it and follow the wizard. Installs per-user (no admin needed) with a desktop + Start-menu shortcut.
+
+### 🐧 Linux (x64) — `Video.Download.by.CMK-1.0.0.AppImage`
+Make it executable, then run it:
+```bash
+chmod +x Video.Download.by.CMK-1.0.0.AppImage
+./Video.Download.by.CMK-1.0.0.AppImage
+```
+(Or right-click → **Properties → Permissions → Allow executing file as program**, then double-click.)
+On **Ubuntu 22.04+** an AppImage may need FUSE — `sudo apt install libfuse2`, or run it with `--appimage-extract-and-run`.
 
 ---
 
-## ⚠️ First launch — "Windows protected your PC"
+## ⚠️ First launch on Windows — "Windows protected your PC"
 
 This app is **not code-signed** (signing certificates cost money), so Windows will warn you the first time. It's safe — here's how to get past it:
 
@@ -56,7 +66,7 @@ Sites change constantly, and `yt-dlp` updates often to keep up. If a download st
 
 ## 💻 Requirements
 
-- Windows 10 or 11, 64-bit
+- Windows 10/11 (64-bit) **or** a modern 64-bit Linux distro
 - ~500 MB free disk space (the engine is bundled)
 - An internet connection 🙂
 
