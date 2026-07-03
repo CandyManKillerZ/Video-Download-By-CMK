@@ -9,6 +9,7 @@
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win --publish never",
+    "dist:linux": "electron-builder --linux --publish never",
     "make-icon": "node build/make-icon.js"
   },
   "devDependencies": {
@@ -31,6 +32,13 @@
     "win": {
       "target": "nsis",
       "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "icon": "build/icon.png",
+      "category": "AudioVideo",
+      "maintainer": "CandyManKillerZ",
+      "synopsis": "GUI video downloader (yt-dlp + ffmpeg)"
     },
     "nsis": {
       "oneClick": false,

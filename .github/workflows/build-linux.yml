@@ -1,0 +1,58 @@
+name: build-linux
+
+# Builds the Linux AppImage on real Linux (can't be done reliably on Windows) and
+# attaches it to the matching GitHub release. Trigger by pushing a v* tag, or run
+# manually from the Actions tab (uploads to RELEASE_TAG below).
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to attach the AppImage to"
+        default: "v1.0.0"
+        required: true
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  appimage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Fetch Linux engine binaries (yt-dlp + ffmpeg)
+        run: |
+          set -e
+          mkdir -p bin
+          # yt-dlp_linux is the standalone build (no system Python required)
+          curl -L -o bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux
+          # static ffmpeg/ffprobe for linux64
+          curl -L -o /tmp/ffmpeg.tar.xz https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz
+          mkdir -p /tmp/ff
+          tar -xf /tmp/ffmpeg.tar.xz -C /tmp/ff --strip-components=1
+          cp /tmp/ff/bin/ffmpeg  bin/ffmpeg
+          cp /tmp/ff/bin/ffprobe bin/ffprobe
+          chmod +x bin/yt-dlp bin/ffmpeg bin/ffprobe
+          ls -la bin
+
+      - name: Build AppImage
+        run: npx electron-builder --linux AppImage --publish never
+
+      - name: Show build output
+        run: ls -la dist
+
+      - name: Attach AppImage to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.release_tag || github.ref_name }}
+          files: dist/*.AppImage
+          fail_on_unmatched_files: true

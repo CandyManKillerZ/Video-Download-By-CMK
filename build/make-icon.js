@@ -71,7 +71,7 @@ const pngToIco = require('png-to-ico');
     tmp.push(p);
   }
 
-  await square(256).writeAsync(path.join(dir, 'icon.png'));
+  await square(512).writeAsync(path.join(dir, 'icon.png'));   // 512 for Linux launcher icon
   fs.writeFileSync(path.join(dir, 'icon.ico'), await pngToIco(tmp));
   tmp.forEach((f) => { try { fs.unlinkSync(f); } catch {} });
 

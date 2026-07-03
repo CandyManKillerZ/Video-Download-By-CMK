@@ -157,7 +157,9 @@ function startDownload(req) {
   ];
   if (process.platform === 'win32') args.unshift('--windows-filenames');
 
-  const child = spawn(YTDLP, args, { windowsHide: true });
+  // detached on non-Windows makes the child a process-group leader, so killTree's
+  // process.kill(-pid) can take down yt-dlp AND its ffmpeg child together.
+  const child = spawn(YTDLP, args, { windowsHide: true, detached: process.platform !== 'win32' });
   const job = { child, dests: new Set(), pausing: false, stopping: false };
   jobs.set(req.id, job);
   send('vx-status', { id: req.id, state: 'downloading' });
